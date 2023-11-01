@@ -1093,6 +1093,7 @@ func authOnlyAuthorize(req *http.Request, s *sessionsapi.SessionState) bool {
 
 	constraints := []func(*http.Request, *sessionsapi.SessionState) bool{
 		checkAllowedGroups,
+		checkAllowedRoles,
 		checkAllowedEmailDomains,
 		checkAllowedEmails,
 	}
@@ -1163,6 +1164,24 @@ func checkAllowedGroups(req *http.Request, s *sessionsapi.SessionState) bool {
 	}
 
 	return false
+}
+
+// checkAllowedRoles allow secondary role restrictions based on the `allowed_roles`
+// querystring parameter
+func checkAllowedRoles(req *http.Request, s *sessionsapi.SessionState) bool {
+	allowedRoles := extractAllowedEntities(req, "allowed_roles")
+	if len(allowedRoles) == 0 {
+		return true
+	}
+
+	for _, role := range s.Roles {
+		if _, ok := allowedRoles[role]; ok {
+			return true
+		}
+	}
+
+	return false
+
 }
 
 // checkAllowedEmails allow email restrictions based on the `allowed_emails`
